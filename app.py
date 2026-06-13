@@ -79,9 +79,14 @@ with st.sidebar:
     st.markdown("### 🧠 도메인 특화 AI")
     st.markdown("---")
 
+    try:
+        _default_key = st.secrets.get("OPENAI_API_KEY", os.getenv("OPENAI_API_KEY",""))
+    except Exception:
+        _default_key = os.getenv("OPENAI_API_KEY","")
+
     api_key = st.text_input(
         "OpenAI API Key",
-        value=os.getenv("OPENAI_API_KEY",""),
+        value=_default_key,
         type="password",
         placeholder="sk-...",
     )
@@ -296,15 +301,19 @@ with tab1:
             )
             return resp.choices[0].message.content.strip()
 
-        with st.spinner("도메인 특화 AI 실행 중..."):
-            response = run_guardrail_loop(
-                question=question,
-                llm_fn=llm_fn,
-                engine=st.session_state.engine,
-                max_attempts=max_retry,
-                logp_thr=logp_thr,
-                guideline_hint=st.session_state.guideline_hint[:600],
-            )
+        try:
+            with st.spinner("도메인 특화 AI 실행 중..."):
+                response = run_guardrail_loop(
+                    question=question,
+                    llm_fn=llm_fn,
+                    engine=st.session_state.engine,
+                    max_attempts=max_retry,
+                    logp_thr=logp_thr,
+                    guideline_hint=st.session_state.guideline_hint[:600],
+                )
+        except Exception as e:
+            st.error(f"실행 오류: {e}")
+            st.stop()
 
         st.session_state.history.insert(0, {
             "question": question,
